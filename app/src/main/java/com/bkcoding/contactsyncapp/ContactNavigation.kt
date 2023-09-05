@@ -1,11 +1,5 @@
 package com.bkcoding.contactsyncapp
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -13,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
 import com.bkcoding.contactsyncapp.ui.screen.ContactScreen
+import com.bkcoding.contactsyncapp.ui.theme.ContactSyncAppTheme
 
 object Routing {
     /**
@@ -45,7 +40,9 @@ fun ContactNavigation(
         composable(
             route = Routing.contactScreen
         ) {
-            ContactScreen()
+            ContactSyncAppTheme(darkTheme = true) {
+                ContactScreen()
+            }
         }
     }
 }

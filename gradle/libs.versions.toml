@@ -12,7 +12,9 @@ room = "2.5.2"
 coroutines = "1.7.1"
 material-icons = "1.6.0-alpha04"
 navigation-compose = "2.7.1"
-dagger-hilt = "2.44"
+dagger-hilt = "2.47"
+hilt-navigation-compose = "1.0.0"
+lifecycle-runtime-compose = "2.6.1"
 
 [libraries]
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
@@ -40,6 +42,8 @@ material-icons-core = { group = "androidx.compose.material", name = "material-ic
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
 dagger-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "dagger-hilt" }
 hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "dagger-hilt" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-navigation-compose"}
+lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle-runtime-compose"}
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ContactSyncApp</string>
+    <string name="placeholder_search">Search</string>
+    <string name="title_contacts"> Contacts</string>
 </resources>

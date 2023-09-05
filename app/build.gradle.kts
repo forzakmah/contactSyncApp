@@ -78,6 +78,7 @@ dependencies {
      * Androidx navigation
      */
     implementation(libs.navigation.compose)
+    implementation(libs.hilt.navigation.compose)
 
     /*
     * Coroutines
@@ -98,4 +99,9 @@ dependencies {
      */
     implementation(libs.dagger.hilt.android)
     kapt(libs.hilt.android.compiler)
+
+    /**
+     * life cycle support
+     */
+    implementation(libs.lifecycle.runtime.compose)
 }

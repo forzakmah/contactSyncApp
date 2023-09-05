@@ -53,7 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bkcoding.contactsyncapp.R
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactScreen(
     viewModel: ContactViewModel = hiltViewModel()
@@ -82,44 +82,74 @@ fun ContactScreen(
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-        ) {
-            /**
-             * the sticky header represent the search field to filter contacts by fullName and/or phone number
-             */
-            stickyHeader {
-                SearchField(
-                    query = query,
-                    onValueChange = viewModel::onSearchQueryChanged
-                )
-            }
+        when (val state = searchResultUiState) {
+            SearchContactUiState.SearchContactNotReady -> CenteredTextIndicator(
+                text = stringResource(id = R.string.please_wait_sync_in_progress)
+            )
 
-            (1..50).forEach { index ->
-                if (index > 0)
-                    item {
-                        Divider(
-                            modifier = Modifier.fillMaxWidth(),
-                            thickness = 0.25.dp,
-                            color = Color.DarkGray
-                        )
-                    }
+            SearchContactUiState.Failed -> Unit
+            SearchContactUiState.Loading -> Unit
+            is SearchContactUiState.Success ->
+                if (state.contacts.isEmpty())
+                    CenteredTextIndicator(
+                        text = stringResource(id = R.string.zero_contact_found)
+                    )
+                else
+                    ContactsItems(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                        query = query,
+                        contacts = state.contacts,
+                        onSearchQueryChanged = viewModel::onSearchQueryChanged
+                    )
+
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ContactsItems(
+    modifier: Modifier = Modifier,
+    query: String,
+    contacts: List<String> = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"),
+    onSearchQueryChanged: (String) -> Unit
+) {
+    LazyColumn(modifier = modifier)
+    {
+        /**
+         * the sticky header represent the search field to filter contacts by fullName and/or phone number
+         */
+        stickyHeader {
+            SearchField(
+                query = query,
+                onValueChange = onSearchQueryChanged
+            )
+        }
+
+        contacts.forEachIndexed { index, contact ->
+            if (index > 0)
                 item {
-                    ContactRow(
-                        contact = "Alex le testeur $index",
-                        phoneNumber = "+216 25 072 165",
-                        onClick = {
-                            /**
-                             * when user click over the row
-                             */
-                        }
-                    ) {
+                    Divider(
+                        modifier = Modifier.fillMaxWidth(),
+                        thickness = 0.25.dp,
+                        color = Color.DarkGray
+                    )
+                }
+            item {
+                ContactRow(
+                    contact = "Alex le testeur $index",
+                    phoneNumber = "+216 25 072 165",
+                    onClick = {
                         /**
-                         * when the user click the call icon
+                         * when user click over the row
                          */
                     }
+                ) {
+                    /**
+                     * when the user click the call icon
+                     */
                 }
             }
         }
@@ -270,6 +300,22 @@ fun SearchField(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             )
+        )
+    }
+}
+
+@Composable
+fun CenteredTextIndicator(
+    modifier: Modifier = Modifier,
+    text: String
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.headlineMedium
         )
     }
 }

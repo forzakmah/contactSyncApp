@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 
+private const val MIN_COUNT_TO_SEARCH = 1
 private const val SEARCH_QUERY_MIN_LENGTH = 2
 private const val SEARCH_QUERY = "searchQuery"
 
@@ -32,28 +33,31 @@ class ContactViewModel @Inject constructor(
          * return count of contacts
          */
         flowOf(10)
-            .flatMapLatest {
-                searchQuery.flatMapLatest { query ->
-                    if (query.length < SEARCH_QUERY_MIN_LENGTH) {
-                        flowOf(SearchContactUiState.Empty)
-                    } else {
+            .flatMapLatest { count ->
+                if (count < MIN_COUNT_TO_SEARCH) {
+                    flowOf(SearchContactUiState.SearchContactNotReady)
+                } else {
+                    searchQuery.flatMapLatest { query ->
                         /**
-                         * fetch contacts and convert it to flow of result
+                         * fetch contacts and convert them to flow of result
                          */
-                        flowOf(10).asResult().map {
-                            when (it) {
-                                is Result.Success -> SearchContactUiState.Success(listOf())
-                                is Result.Loading -> SearchContactUiState.Loading
-                                is Result.Error -> SearchContactUiState.Failed
+                        flowOf(
+                            if (query.length < SEARCH_QUERY_MIN_LENGTH) 0 else 1
+                        ).asResult()
+                            .map {
+                                when (it) {
+                                    is Result.Success -> SearchContactUiState.Success(listOf())
+                                    is Result.Loading -> SearchContactUiState.Loading
+                                    is Result.Error -> SearchContactUiState.Failed
+                                }
                             }
-                        }
                     }
                 }
             }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5000),
-                SearchContactUiState.Empty
+                SearchContactUiState.Loading
             )
 
     fun onSearchQueryChanged(query: String) {
@@ -63,10 +67,13 @@ class ContactViewModel @Inject constructor(
 
 sealed interface SearchContactUiState {
     object Loading : SearchContactUiState
-
     object Failed : SearchContactUiState
 
-    object Empty : SearchContactUiState
-
-    data class Success(val contacts: List<String>) : SearchContactUiState
+    /**
+     * Meaning sync in progress database is empty
+     */
+    object SearchContactNotReady : SearchContactUiState
+    data class Success(
+        val contacts: List<String>
+    ) : SearchContactUiState
 }

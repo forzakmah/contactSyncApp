@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "30dd55de3f53b300ff225f473d2fc112",
+    "identityHash": "809573cd9f8bf7357bbe2f23dd66e0a4",
     "entities": [
       {
         "tableName": "contacts",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `first_name` TEXT NOT NULL, `last_name` TEXT NOT NULL, `phone_number` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER, `deleted_at` INTEGER, `is_deleted` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `display_name` TEXT NOT NULL, `given_name` TEXT, `middle_name` TEXT, `family_name` TEXT, `phone_numbers` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER, `deleted_at` INTEGER, `is_deleted` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -15,20 +15,32 @@
             "notNull": true
           },
           {
-            "fieldPath": "firstName",
-            "columnName": "first_name",
+            "fieldPath": "displayName",
+            "columnName": "display_name",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "lastName",
-            "columnName": "last_name",
+            "fieldPath": "givenName",
+            "columnName": "given_name",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           },
           {
-            "fieldPath": "phoneNumber",
-            "columnName": "phone_number",
+            "fieldPath": "middleName",
+            "columnName": "middle_name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "familyName",
+            "columnName": "family_name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "phoneNumbers",
+            "columnName": "phone_numbers",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -70,7 +82,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '30dd55de3f53b300ff225f473d2fc112')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '809573cd9f8bf7357bbe2f23dd66e0a4')"
     ]
   }
 }

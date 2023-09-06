@@ -13,20 +13,23 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface ContactDao {
-    @Query(value = "SELECT * FROM contacts where is_deleted = 0 and deleted_at = null")
+    @Query(value = "SELECT * FROM contacts where is_deleted = 0")
     fun getContactEntities(): Flow<List<ContactEntity>>
 
-    @Query(value = "SELECT * FROM contacts where is_deleted = 0 and deleted_at = null")
+    @Query("SELECT * FROM contacts where phone_numbers LIKE '%' || :query || '%' OR display_name LIKE '%' || :query || '%'")
+    fun getContactEntities(query: String): Flow<List<ContactEntity>>
+
+    @Query(value = "SELECT * FROM contacts where is_deleted = 0")
     suspend fun getContactEntitiesAsList(): List<ContactEntity>
 
-    @Query("SELECT * FROM contacts WHERE id IN (:ids) and is_deleted = 0 and deleted_at = null")
+    @Query("SELECT * FROM contacts WHERE id IN (:ids) and is_deleted = 0")
     fun getContactEntities(ids: Set<String>): Flow<List<ContactEntity>>
 
     /**
-     * Inserts [ContactEntity] into the db if they don't exist, and ignores those that do
+     * Inserts [ContactEntity] into the db if they don't exist, replace them
      */
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertOrIgnoreContacts(contactEntities: List<ContactEntity>): List<Long>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertContacts(contactEntities: List<ContactEntity>): List<Long>
 
     /**
      * Inserts or updates [entities] in the db under the specified primary keys
@@ -45,10 +48,4 @@ interface ContactDao {
      */
     @Query("SELECT count(*) FROM contacts where is_deleted = 0")
     fun getCount(): Flow<Int>
-
-    /**
-     * return number of contacts inside database using query
-     */
-    @Query("SELECT count(*) FROM contacts where (phone_number or first_name or last_name) MATCH :query and is_deleted = 0")
-    fun getCount(query: String): Flow<Int>
 }

@@ -2,6 +2,7 @@ package com.bkcoding.contactsyncapp.db.converter
 
 
 import androidx.room.TypeConverter
+import com.google.gson.Gson
 import java.util.Date
 
 class DateConverter {
@@ -14,4 +15,12 @@ class DateConverter {
     fun dateToTimestamp(date: Date?): Long? {
         return date?.time
     }
+}
+
+class ListConverter {
+    @TypeConverter
+    fun listToJsonString(value: List<String>?): String = Gson().toJson(value)
+
+    @TypeConverter
+    fun jsonStringToList(value: String) = Gson().fromJson(value, Array<String>::class.java).toList()
 }

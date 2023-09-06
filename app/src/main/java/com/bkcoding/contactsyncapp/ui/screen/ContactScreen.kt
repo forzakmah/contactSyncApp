@@ -1,12 +1,16 @@
 package com.bkcoding.contactsyncapp.ui.screen
 
+import android.Manifest
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +27,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -39,11 +44,16 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -52,17 +62,32 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bkcoding.contactsyncapp.R
+import com.bkcoding.contactsyncapp.model.ContactModel
+import com.bkcoding.contactsyncapp.utils.hasPermission
+import com.bkcoding.contactsyncapp.utils.requestPermissionLauncher
+
+
+const val readContactsPermission = Manifest.permission.READ_CONTACTS
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ContactScreen(
+fun ContactRoute(
     viewModel: ContactViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         state = rememberTopAppBarState()
     )
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
     val searchResultUiState by viewModel.searchContactUiState.collectAsStateWithLifecycle()
+    var hasPermission by remember {
+        mutableStateOf(hasPermission(context, readContactsPermission))
+    }
+    val permissionLauncher = requestPermissionLauncher(
+        permissionCallback = {
+            hasPermission = it
+        }
+    )
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -82,42 +107,35 @@ fun ContactScreen(
             )
         }
     ) { padding ->
-        when (val state = searchResultUiState) {
-            SearchContactUiState.SearchContactNotReady -> CenteredTextIndicator(
-                text = stringResource(id = R.string.please_wait_sync_in_progress)
+        if (hasPermission)
+            ContactScreen(
+                padding = padding,
+                query = query,
+                searchResultUiState = searchResultUiState,
+                onSearchQueryChanged = viewModel::onSearchQueryChanged
             )
-
-            SearchContactUiState.Failed -> Unit
-            SearchContactUiState.Loading -> Unit
-            is SearchContactUiState.Success ->
-                if (state.contacts.isEmpty())
-                    CenteredTextIndicator(
-                        text = stringResource(id = R.string.zero_contact_found)
-                    )
-                else
-                    ContactsItems(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        query = query,
-                        contacts = state.contacts,
-                        onSearchQueryChanged = viewModel::onSearchQueryChanged
-                    )
-
-        }
+        else
+            RequestPermissionView(
+                padding = padding,
+                launcher = permissionLauncher
+            )
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ContactsItems(
+internal fun ContactScreen(
     modifier: Modifier = Modifier,
+    padding: PaddingValues,
+    searchResultUiState: SearchContactUiState,
     query: String,
-    contacts: List<String> = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"),
     onSearchQueryChanged: (String) -> Unit
 ) {
-    LazyColumn(modifier = modifier)
-    {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(padding)
+    ) {
         /**
          * the sticky header represent the search field to filter contacts by fullName and/or phone number
          */
@@ -128,28 +146,57 @@ fun ContactsItems(
             )
         }
 
-        contacts.forEachIndexed { index, contact ->
-            if (index > 0)
+        when (searchResultUiState) {
+            SearchContactUiState.Failed,
+            SearchContactUiState.Loading -> Unit
+
+            SearchContactUiState.SearchContactNotReady ->
                 item {
-                    Divider(
-                        modifier = Modifier.fillMaxWidth(),
-                        thickness = 0.25.dp,
-                        color = Color.DarkGray
+                    CenteredTextIndicator(
+                        modifier = Modifier
+                            .fillParentMaxSize()
+                            .padding(padding),
+                        text = stringResource(
+                            id = R.string.please_wait_sync_in_progress
+                        )
                     )
                 }
-            item {
-                ContactRow(
-                    contact = "Alex le testeur $index",
-                    phoneNumber = "+216 25 072 165",
-                    onClick = {
-                        /**
-                         * when user click over the row
-                         */
+
+            is SearchContactUiState.Success -> {
+                if (searchResultUiState.contacts.isEmpty())
+                    item {
+                        CenteredTextIndicator(
+                            modifier = Modifier
+                                .fillParentMaxSize()
+                                .padding(padding),
+                            text = stringResource(id = R.string.zero_contact_found)
+                        )
                     }
-                ) {
-                    /**
-                     * when the user click the call icon
-                     */
+                else {
+                    searchResultUiState.contacts.forEachIndexed { index, contact ->
+                        if (index > 0)
+                            item {
+                                Divider(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    thickness = 0.25.dp,
+                                    color = Color.DarkGray
+                                )
+                            }
+                        item {
+                            ContactRow(
+                                contact = contact,
+                                onClick = {
+                                    /**
+                                     * when user click over the row
+                                     */
+                                }
+                            ) {
+                                /**
+                                 * when the user click the call icon
+                                 */
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -159,8 +206,7 @@ fun ContactsItems(
 @Composable
 fun ContactRow(
     modifier: Modifier = Modifier,
-    contact: String,
-    phoneNumber: String,
+    contact: ContactModel,
     onClick: () -> Unit,
     call: () -> Unit
 ) {
@@ -181,8 +227,8 @@ fun ContactRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CircularPrefixName(
-                firstName = "Saul",
-                lastName = "Cambell"
+                first = contact.displayName,
+                second = contact.familyName
             )
             Spacer(
                 modifier = Modifier.size(16.dp)
@@ -190,21 +236,22 @@ fun ContactRow(
             Column(
                 modifier = Modifier.wrapContentSize(),
                 verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = contact,
+                    text = contact.displayName,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.size(2.5.dp))
-                Text(
-                    text = phoneNumber,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    fontSize = 14.sp
-                )
+                if (contact.phoneNumbers.isNotEmpty())
+                    Text(
+                        text = contact.phoneNumbers.first().trim(),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        fontSize = 14.sp
+                    )
             }
         }
         IconButton(
@@ -221,8 +268,8 @@ fun ContactRow(
 @Composable
 fun CircularPrefixName(
     modifier: Modifier = Modifier,
-    firstName: String,
-    lastName: String,
+    first: String,
+    second: String?,
 ) {
     Card(
         modifier = modifier.size(ContactScreenConfig.circularPrefixFullName.dp),
@@ -238,7 +285,7 @@ fun CircularPrefixName(
                 modifier = Modifier
                     .wrapContentSize()
                     .align(Alignment.Center),
-                text = "${firstName.first().uppercase()}${lastName.first().uppercase()}",
+                text = "${first.first().uppercase()}${second?.first()?.uppercase() ?: ""}",
                 color = if (isSystemInDarkTheme()) Color.White else Color.Black
             )
         }
@@ -310,13 +357,51 @@ fun CenteredTextIndicator(
     text: String
 ) {
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.bodyMedium
         )
+    }
+}
+
+@Composable
+internal fun RequestPermissionView(
+    padding: PaddingValues,
+    launcher: ManagedActivityResultLauncher<String, Boolean>
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            modifier = Modifier.size(200.dp),
+            painter = painterResource(id = R.drawable.request_permission),
+            contentDescription = null
+        )
+        Text(
+            modifier = Modifier.padding(16.dp),
+            text = String.format(
+                stringResource(id = R.string.text_request_permission),
+                stringResource(id = R.string.app_name)
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center
+        )
+        Button(
+            onClick = {
+                launcher.launch(readContactsPermission)
+            }
+        ) {
+            Text(
+                text = stringResource(id = R.string.btn_request_permission)
+            )
+        }
     }
 }
 

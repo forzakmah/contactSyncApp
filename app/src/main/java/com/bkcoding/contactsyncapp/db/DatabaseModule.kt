@@ -5,6 +5,7 @@ import androidx.room.Room
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -13,7 +14,9 @@ import javax.inject.Singleton
 object DatabaseModule {
     @Provides
     @Singleton
-    fun providesContactDatabase(context: Context): ContactDatabase {
+    fun providesContactDatabase(
+        @ApplicationContext context: Context
+    ): ContactDatabase {
         return Room.databaseBuilder(
             context = context,
             klass = ContactDatabase::class.java,

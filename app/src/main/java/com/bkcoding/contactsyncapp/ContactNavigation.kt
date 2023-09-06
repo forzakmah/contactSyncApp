@@ -6,7 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
-import com.bkcoding.contactsyncapp.ui.screen.ContactScreen
+import com.bkcoding.contactsyncapp.ui.screen.ContactRoute
 import com.bkcoding.contactsyncapp.ui.theme.ContactSyncAppTheme
 
 object Routing {
@@ -41,7 +41,7 @@ fun ContactNavigation(
             route = Routing.contactScreen
         ) {
             ContactSyncAppTheme(darkTheme = true) {
-                ContactScreen()
+                ContactRoute()
             }
         }
     }

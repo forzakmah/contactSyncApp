@@ -110,4 +110,9 @@ dependencies {
      * life cycle support
      */
     implementation(libs.lifecycle.runtime.compose)
+
+    /**
+     * JSON serialization/deserialization
+     */
+    implementation(libs.gson)
 }

@@ -1,11 +1,19 @@
 package com.bkcoding.contactsyncapp.ui.screen
 
+import android.content.ContentResolver
+import android.content.Context
+import android.database.Cursor
+import android.provider.ContactsContract
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bkcoding.contactsyncapp.model.ContactModel
+import com.bkcoding.contactsyncapp.model.asEntity
+import com.bkcoding.contactsyncapp.repository.ContactRepository
 import com.bkcoding.contactsyncapp.utils.Result
 import com.bkcoding.contactsyncapp.utils.asResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,15 +21,15 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
-private const val MIN_COUNT_TO_SEARCH = 1
-private const val SEARCH_QUERY_MIN_LENGTH = 2
+private const val MIN_COUNT_IN_DB_TO_START_SEARCH = 1
 private const val SEARCH_QUERY = "searchQuery"
 
 @HiltViewModel
 class ContactViewModel @Inject constructor(
+    private val contactRepository: ContactRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -32,21 +40,20 @@ class ContactViewModel @Inject constructor(
         /**
          * return count of contacts
          */
-        flowOf(10)
+        contactRepository.count()
             .flatMapLatest { count ->
-                if (count < MIN_COUNT_TO_SEARCH) {
+                if (count < MIN_COUNT_IN_DB_TO_START_SEARCH) {
                     flowOf(SearchContactUiState.SearchContactNotReady)
                 } else {
                     searchQuery.flatMapLatest { query ->
                         /**
                          * fetch contacts and convert them to flow of result
                          */
-                        flowOf(
-                            if (query.length < SEARCH_QUERY_MIN_LENGTH) 0 else 1
-                        ).asResult()
+                        contactRepository.fetchContacts(query)
+                            .asResult()
                             .map {
                                 when (it) {
-                                    is Result.Success -> SearchContactUiState.Success(listOf())
+                                    is Result.Success -> SearchContactUiState.Success(contacts = it.data)
                                     is Result.Loading -> SearchContactUiState.Loading
                                     is Result.Error -> SearchContactUiState.Failed
                                 }
@@ -74,6 +81,6 @@ sealed interface SearchContactUiState {
      */
     object SearchContactNotReady : SearchContactUiState
     data class Success(
-        val contacts: List<String>
+        val contacts: List<ContactModel>
     ) : SearchContactUiState
 }

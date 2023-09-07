@@ -12,6 +12,8 @@ import javax.inject.Singleton
 interface IContactRepository {
     fun fetchContacts(query: String = ""): Flow<List<ContactModel>>
     suspend fun insertContacts(contacts: List<ContactEntity>): List<Long>
+    suspend fun fetchContactsAsList(): List<ContactModel>
+    suspend fun deleteContacts(ids: List<String>)
     fun count(): Flow<Int>
 }
 
@@ -33,8 +35,16 @@ class ContactRepository @Inject constructor(
         }
     }
 
+    override suspend fun fetchContactsAsList(): List<ContactModel> {
+        return dao.getContactEntitiesAsList().map { it.asExternalModel() }
+    }
+
     override suspend fun insertContacts(contacts: List<ContactEntity>) =
         dao.insertContacts(contactEntities = contacts)
+
+    override suspend fun deleteContacts(ids: List<String>) {
+        dao.deleteContacts(ids = ids)
+    }
 
     override fun count(): Flow<Int> {
         return dao.getCount()

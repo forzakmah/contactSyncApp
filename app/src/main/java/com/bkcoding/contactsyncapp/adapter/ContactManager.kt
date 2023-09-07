@@ -1,9 +1,9 @@
 package com.bkcoding.contactsyncapp.adapter
 
-import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.provider.ContactsContract
+import android.util.Log
 import com.bkcoding.contactsyncapp.model.ContactModel
 import com.bkcoding.contactsyncapp.model.asEntity
 import com.bkcoding.contactsyncapp.repository.ContactRepository
@@ -19,6 +19,29 @@ class ContactManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val contactRepository: ContactRepository,
 ) {
+    /**
+     * Return list of deleted contacts
+     */
+    private fun fetchDeletedContacts(): List<String> {
+        val deletedContactsCursor = context.contentResolver.query(
+            ContactsContract.DeletedContacts.CONTENT_URI,
+            null,
+            null,
+            null,
+            null
+        )
+        val deletedContacts = mutableListOf<String>()
+        deletedContactsCursor?.let {
+            val id = deletedContactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.CONTACT_ID)
+            while (deletedContactsCursor.moveToNext()) {
+                val contactId = deletedContactsCursor.getString(id)
+                deletedContacts.add(contactId)
+            }
+            deletedContactsCursor.close()
+        }
+        return deletedContacts
+    }
+
     private fun fetchContactPhoneNumbers(
         contactId: String
     ): List<String> {
@@ -75,19 +98,17 @@ class ContactManager @Inject constructor(
         return names
     }
 
-    fun populateDatabase() {
-        val resolver: ContentResolver = context.contentResolver
-        val cursorContact = resolver.query(
+    private fun fetchDeviceContacts(): List<ContactModel> {
+        val cursorContact = context.contentResolver.query(
             ContactsContract.Contacts.CONTENT_URI,
             null,
             null,
             null,
             null
         )
-        val contacts = mutableListOf<ContactModel>()
+        val deviceContacts = mutableListOf<ContactModel>()
         cursorContact?.let {
             while (cursorContact.moveToNext()) {
-
                 val idColumnIndex = cursorContact.getColumnIndex(ContactsContract.Contacts._ID)
                 val displayNameIndex = cursorContact.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
                 val phoneNumbersIndex = cursorContact.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)
@@ -108,20 +129,59 @@ class ContactManager @Inject constructor(
                     else
                         emptyList()
                 )
-                contacts.add(newContact)
+                deviceContacts.add(newContact)
             }
             cursorContact.close()
+        }
+        return deviceContacts
+    }
 
-            /**
-             * Save contacts inside database
-             */
-            if (contacts.isNotEmpty()) {
-                val scope = CoroutineScope(Dispatchers.IO)
-                scope.launch {
+    fun syncContacts() {
+        /**
+         * Sync new or updated contacts inside local database
+         */
+        val deviceContacts = fetchDeviceContacts()
+        if (deviceContacts.isNotEmpty()) {
+            Log.e("device contacts", "Size ${deviceContacts.size}")
+            val coroutineScope = CoroutineScope(Dispatchers.IO)
+            coroutineScope.launch {
+                val dbContacts = contactRepository.fetchContactsAsList()
+                Log.e("db contacts", "Size ${dbContacts.size}")
+                /**
+                 * contains function will check if the item exits or not
+                 * and also can inform us if object has been edited with the hashCode
+                 */
+                val newContacts = deviceContacts.mapNotNull { contact ->
+                    if (!dbContacts.contains(contact))
+                        contact
+                    else
+                        null
+                }
+                Log.e("updated of new items", "${newContacts.size}")
+                /**
+                 * Save new and updated contacts
+                 */
+                if (newContacts.isNotEmpty()) {
                     contactRepository.insertContacts(
-                        contacts.map { it.asEntity() }.toList()
+                        newContacts.map { contactModel ->
+                            contactModel.asEntity()
+                        }
                     )
                 }
+            }
+        }
+
+        /**
+         * mark removed app contacts as is_deleted = true in the local database
+         */
+        val deletedContacts = fetchDeletedContacts()
+        if (deletedContacts.isNotEmpty()) {
+            Log.e("items to remove", deletedContacts.toString())
+            val scope = CoroutineScope(Dispatchers.IO)
+            scope.launch {
+                contactRepository.deleteContacts(
+                    ids = deletedContacts
+                )
             }
         }
     }

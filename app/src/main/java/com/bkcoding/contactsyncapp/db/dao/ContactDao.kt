@@ -16,7 +16,13 @@ interface ContactDao {
     @Query(value = "SELECT * FROM contacts where is_deleted = 0")
     fun getContactEntities(): Flow<List<ContactEntity>>
 
-    @Query("SELECT * FROM contacts where phone_numbers LIKE '%' || :query || '%' OR display_name LIKE '%' || :query || '%'")
+    @Query(
+        """
+        SELECT * FROM contacts where phone_numbers
+        LIKE '%' || :query || '%' OR display_name LIKE '%' || :query || '%' 
+        and is_deleted = 0
+         """
+    )
     fun getContactEntities(query: String): Flow<List<ContactEntity>>
 
     @Query(value = "SELECT * FROM contacts where is_deleted = 0")
@@ -40,7 +46,7 @@ interface ContactDao {
     /**
      * Deletes rows in the db matching the specified [ids]
      */
-    @Query("DELETE FROM contacts WHERE id in (:ids)")
+    @Query("UPDATE contacts set is_deleted = 1 WHERE id in (:ids)")
     suspend fun deleteContacts(ids: List<String>)
 
     /**

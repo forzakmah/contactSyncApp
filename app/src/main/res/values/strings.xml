@@ -8,4 +8,8 @@
 
     <string name="btn_request_permission">Request permission</string>
     <string name="text_request_permission">Enable permission in your device. Give %s access to your contacts</string>
+
+
+    <string name="account_type">com.bkcoding.contactsyncapp.account</string>
+    <string name="provider">com.bkcoding.contactsyncapp.provider</string>
 </resources>

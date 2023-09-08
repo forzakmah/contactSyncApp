@@ -4,7 +4,7 @@
     <string name="title_contacts"> Contacts</string>
 
     <string name="zero_contact_found">0 contact found</string>
-    <string name="please_wait_sync_in_progress">Please wait contacts sync in progress…</string>
+    <string name="please_wait_sync_in_progress">Please wait sync contacts in progress…</string>
 
     <string name="btn_request_permission">Request permission</string>
     <string name="text_request_permission">Enable permission in your device. Give %s access to your contacts</string>

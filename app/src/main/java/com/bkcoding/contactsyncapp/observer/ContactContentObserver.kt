@@ -15,10 +15,21 @@ class ContactContentObserver(
     handler: Handler
 ) : ContentObserver(handler) {
     override fun onChange(selfChange: Boolean) {
-        onChange(selfChange, null)
+        startSync()
+    }
+
+    /**
+     * Enabled for apps that target Android 11 (API level 30) or higher.
+     */
+    override fun onChange(selfChange: Boolean, uri: Uri?, flags: Int) {
+        startSync()
     }
 
     override fun onChange(selfChange: Boolean, uri: Uri?) {
+        startSync()
+    }
+
+    private fun startSync() {
         val account = Account(ACCOUNT, ACCOUNT_TYPE)
         val syncRequest = SyncRequest.Builder()
             /**

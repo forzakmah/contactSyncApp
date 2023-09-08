@@ -1,4 +1,4 @@
-package com.bkcoding.contactsyncapp.adapter
+package com.bkcoding.contactsyncapp.authenticator
 
 import android.accounts.AbstractAccountAuthenticator
 import android.accounts.Account

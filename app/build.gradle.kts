@@ -115,4 +115,9 @@ dependencies {
      * JSON serialization/deserialization
      */
     implementation(libs.gson)
+
+    /**
+     * dataStore
+     */
+    implementation(libs.datastore)
 }

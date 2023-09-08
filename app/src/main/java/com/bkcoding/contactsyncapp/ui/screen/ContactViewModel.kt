@@ -1,13 +1,16 @@
 package com.bkcoding.contactsyncapp.ui.screen
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bkcoding.contactsyncapp.utils.ContactHelper
 import com.bkcoding.contactsyncapp.model.ContactModel
 import com.bkcoding.contactsyncapp.repository.ContactRepository
 import com.bkcoding.contactsyncapp.utils.Result
 import com.bkcoding.contactsyncapp.utils.asResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +18,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private const val MIN_COUNT_IN_DB_TO_START_SEARCH = 1
@@ -23,7 +27,8 @@ private const val SEARCH_QUERY = "searchQuery"
 @HiltViewModel
 class ContactViewModel @Inject constructor(
     private val contactRepository: ContactRepository,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    private val contactManager: ContactHelper
 ) : ViewModel() {
 
     val searchQuery = savedStateHandle.getStateFlow(SEARCH_QUERY, "")
@@ -62,6 +67,12 @@ class ContactViewModel @Inject constructor(
 
     fun onSearchQueryChanged(query: String) {
         savedStateHandle[SEARCH_QUERY] = query
+    }
+
+    fun populateDatabase() {
+        viewModelScope.launch(Dispatchers.IO) {
+            contactManager.populateDatabase()
+        }
     }
 }
 

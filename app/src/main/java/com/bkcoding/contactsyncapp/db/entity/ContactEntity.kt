@@ -22,8 +22,6 @@ data class ContactEntity(
     val phoneNumbers: List<String>,
     @ColumnInfo(name = "created_at")
     val createdAt: Date = Date(),
-    @ColumnInfo(name = "updated_at")
-    val updatedAt: Date? = null,
     @ColumnInfo(name = "deleted_at")
     val deletedAt: Date? = null,
     @ColumnInfo(name = "is_deleted")

@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Upsert
 import com.bkcoding.contactsyncapp.db.entity.ContactEntity
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 /**
  * DAO for [ContactEntity]
@@ -46,8 +47,8 @@ interface ContactDao {
     /**
      * Deletes rows in the db matching the specified [ids]
      */
-    @Query("UPDATE contacts set is_deleted = 1 WHERE id in (:ids)")
-    suspend fun deleteContacts(ids: List<String>)
+    @Query("UPDATE contacts set is_deleted = 1, deleted_at = :date WHERE id in (:ids) and is_deleted = 0")
+    suspend fun deleteContacts(ids: List<String>, date: Date)
 
     /**
      * return number of contacts inside database

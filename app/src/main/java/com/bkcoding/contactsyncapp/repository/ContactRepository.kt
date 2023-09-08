@@ -6,6 +6,7 @@ import com.bkcoding.contactsyncapp.db.entity.asExternalModel
 import com.bkcoding.contactsyncapp.model.ContactModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,7 +14,7 @@ interface IContactRepository {
     fun fetchContacts(query: String = ""): Flow<List<ContactModel>>
     suspend fun insertContacts(contacts: List<ContactEntity>): List<Long>
     suspend fun fetchContactsAsList(): List<ContactModel>
-    suspend fun deleteContacts(ids: List<String>)
+    suspend fun deleteContacts(ids: List<String>, date: Date)
     fun count(): Flow<Int>
 }
 
@@ -42,8 +43,11 @@ class ContactRepository @Inject constructor(
     override suspend fun insertContacts(contacts: List<ContactEntity>) =
         dao.insertContacts(contactEntities = contacts)
 
-    override suspend fun deleteContacts(ids: List<String>) {
-        dao.deleteContacts(ids = ids)
+    override suspend fun deleteContacts(ids: List<String>, date: Date) {
+        dao.deleteContacts(
+            ids = ids,
+            date = date
+        )
     }
 
     override fun count(): Flow<Int> {

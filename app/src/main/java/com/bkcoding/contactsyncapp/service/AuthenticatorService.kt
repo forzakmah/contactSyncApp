@@ -3,7 +3,7 @@ package com.bkcoding.contactsyncapp.service
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.bkcoding.contactsyncapp.adapter.StubAuthenticator
+import com.bkcoding.contactsyncapp.authenticator.StubAuthenticator
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

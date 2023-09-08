@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -63,11 +64,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bkcoding.contactsyncapp.R
 import com.bkcoding.contactsyncapp.model.ContactModel
-import com.bkcoding.contactsyncapp.utils.hasPermission
+import com.bkcoding.contactsyncapp.utils.hasPermissions
 import com.bkcoding.contactsyncapp.utils.requestPermissionLauncher
 
 
-const val readContactsPermission = Manifest.permission.READ_CONTACTS
+internal var screenPermissions = listOf(
+    Manifest.permission.READ_CONTACTS,
+    Manifest.permission.WRITE_CONTACTS
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,19 +79,30 @@ fun ContactRoute(
     viewModel: ContactViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    var hasPermission by remember {
+        mutableStateOf(
+            hasPermissions(
+                context = context,
+                permissions = screenPermissions
+            )
+        )
+    }
+
+    val permissionLauncher = requestPermissionLauncher(
+        permissionCallback = {
+            hasPermission = it
+            /**
+             * when user grant permission we populate database with the contacts
+             */
+            if (it) viewModel.populateDatabase()
+        }
+    )
+
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         state = rememberTopAppBarState()
     )
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
     val searchResultUiState by viewModel.searchContactUiState.collectAsStateWithLifecycle()
-    var hasPermission by remember {
-        mutableStateOf(hasPermission(context, readContactsPermission))
-    }
-    val permissionLauncher = requestPermissionLauncher(
-        permissionCallback = {
-            hasPermission = it
-        }
-    )
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -98,7 +113,7 @@ fun ContactRoute(
                     Text(
                         text = stringResource(id = R.string.title_contacts),
                         style = MaterialTheme.typography.headlineSmall,
-                        color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                        color = Color.White
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -147,15 +162,26 @@ internal fun ContactScreen(
         }
 
         when (searchResultUiState) {
-            SearchContactUiState.Failed,
-            SearchContactUiState.Loading -> Unit
+            SearchContactUiState.Failed -> {
+                /**
+                 * Add text indicator with possibility to refresh state
+                 */
+            }
+
+            SearchContactUiState.Loading ->
+                item {
+                    Box(
+                        modifier = Modifier.fillParentMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
 
             SearchContactUiState.SearchContactNotReady ->
                 item {
                     CenteredTextIndicator(
-                        modifier = Modifier
-                            .fillParentMaxSize()
-                            .padding(padding),
+                        modifier = Modifier.fillParentMaxSize(),
                         text = stringResource(
                             id = R.string.please_wait_sync_in_progress
                         )
@@ -166,9 +192,7 @@ internal fun ContactScreen(
                 if (searchResultUiState.contacts.isEmpty())
                     item {
                         CenteredTextIndicator(
-                            modifier = Modifier
-                                .fillParentMaxSize()
-                                .padding(padding),
+                            modifier = Modifier.fillParentMaxSize(),
                             text = stringResource(id = R.string.zero_contact_found)
                         )
                     }
@@ -187,11 +211,13 @@ internal fun ContactScreen(
                                 contact = contact,
                                 onClick = {
                                     /**
+                                     * TODO
                                      * when user click over the row
                                      */
                                 }
                             ) {
                                 /**
+                                 * TODO
                                  * when the user click the call icon
                                  */
                             }
@@ -227,8 +253,7 @@ fun ContactRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CircularPrefixName(
-                first = contact.displayName,
-                second = contact.familyName
+                first = contact.displayName
             )
             Spacer(
                 modifier = Modifier.size(16.dp)
@@ -268,8 +293,7 @@ fun ContactRow(
 @Composable
 fun CircularPrefixName(
     modifier: Modifier = Modifier,
-    first: String,
-    second: String?,
+    first: String?
 ) {
     Card(
         modifier = modifier.size(ContactScreenConfig.circularPrefixFullName.dp),
@@ -281,11 +305,13 @@ fun CircularPrefixName(
         Box(
             modifier = Modifier.size(ContactScreenConfig.circularPrefixFullName.dp)
         ) {
+            val firstItem = first?.first()?.toString()?.uppercase() ?: ""
             Text(
                 modifier = Modifier
                     .wrapContentSize()
                     .align(Alignment.Center),
-                text = "${first.first().uppercase()}${second?.first()?.uppercase() ?: ""}",
+                //text = "QW",
+                text = firstItem,
                 color = if (isSystemInDarkTheme()) Color.White else Color.Black
             )
         }
@@ -329,13 +355,13 @@ fun SearchField(
                 Icon(
                     imageVector = Icons.Outlined.Search,
                     contentDescription = stringResource(id = R.string.app_name),
-                    tint = if (isSystemInDarkTheme()) Color.White else Color.Black
+                    tint = Color.White
                 )
             },
             placeholder = {
                 Text(
                     text = stringResource(id = R.string.placeholder_search),
-                    color = if (isSystemInDarkTheme()) Color.White else Color.Black,
+                    color = Color.White,
                     fontSize = 14.sp
                 )
             },
@@ -346,7 +372,8 @@ fun SearchField(
                 disabledContainerColor = containerColor,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-            )
+                focusedTextColor = Color.White
+            ),
         )
     }
 }
@@ -370,7 +397,7 @@ fun CenteredTextIndicator(
 @Composable
 internal fun RequestPermissionView(
     padding: PaddingValues,
-    launcher: ManagedActivityResultLauncher<String, Boolean>
+    launcher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>
 ) {
     Column(
         modifier = Modifier
@@ -395,7 +422,7 @@ internal fun RequestPermissionView(
         )
         Button(
             onClick = {
-                launcher.launch(readContactsPermission)
+                launcher.launch(screenPermissions.toTypedArray())
             }
         ) {
             Text(

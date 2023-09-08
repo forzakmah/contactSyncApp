@@ -1,0 +1,39 @@
+apply plugin: "org.sonarqube"
+/***
+ *  1) Download and install docker from https://docs.docker.com/desktop/
+ *  2) After we install docker we need to setup sonarQube image, open terminal and run this cmd
+ *     docker pull sonarqube:7.5-community
+ *  3) Run sonarqube with this cmd
+ *     docker run -d —-name sonarqube -p 9000:9000 sonarqube:7.5-community
+ *  4) Go to “http://localhost:9000/” and login with username=admin and pwd=admin
+ *  5) Create a new token for the the app
+ *  6) Run Sonar Analyzer with the cmd below
+ *    ./gradlew sonarqube -Dsonar.host.url=http://localhost:9000 -Dsonar.login=YOUR_TOKEN
+ ***/
+def androidCodeExclusion = [
+        '**/*Test*/**',
+        '*.json',
+        '**/*test*/**',
+        '**/.gradle/**',
+        '**/databinding/**/*.*',
+        '**/android/databinding/*Binding.*',
+        '**/BR.*',
+        '**/R.*',
+        '**/R$*.*',
+        '**/BuildConfig.*',
+        '**/Manifest*.*',
+        '**/mockserver/**'
+]
+sonarqube {
+    properties {
+        property("sonar.projectKey", "sync_contact_key")
+        property "sonar.projectName", "SyncContactApp"
+        property "sonar.tests", ["src/test/java", "src/androidTest/java"]
+        property "sonar.test.inclusions", "**/*Test*/**"
+        property "sonar.sourceEncoding", "UTF-8"
+        property "sonar.sources", "src/main/java"
+        property "sonar.exclusions", androidCodeExclusion.join(",")
+        property "sonar.login", "e8a393c1efa5abb5d2329a7e6c30799e9e34116b"
+        property "sonar.host.url", "http://localhost:9000/"
+    }
+}

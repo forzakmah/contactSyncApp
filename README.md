@@ -25,3 +25,7 @@ The app offer the possibility to search contacts by phone number or display name
 * [Hilt](https://developer.android.com/training/dependency-injection/hilt-android) is a dependency injection library for
   Android
 * [Kotlin-Flow](https://developer.android.com/kotlin/flow) flow is a type that can emit multiple values sequentially, as opposed to suspend functions that return only a single value
+
+#### Sonar analyse result
+
+![alt text](https://github.com/forzakmah/contactSyncApp/blob/main/previews/sonar_contact_app.png "Preview")

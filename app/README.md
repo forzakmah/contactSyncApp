@@ -1,4 +1,4 @@
-# <b>WeatherApp</b>
+# <b>ContactSyncApp</b>
 
 A simple android contact synchronization app demonstrating Jetpack Compose, Coroutines, Kotlin flow and room database.
 
@@ -7,7 +7,7 @@ and observe any changes (Update, Delete and Save) with the abstract class [Conte
 
 The app offer the possibility to search contacts by phone number or display name.
 
-![alt text](https://github.com/forzakmah/contactSyncApp/blob/main/previews/contact_app.png "Preview")
+![alt text](https://github.com/forzakmah/contactSyncApp/blob/main/previews/ss.png "Preview")
 
 ### Libraries
 
@@ -25,7 +25,3 @@ The app offer the possibility to search contacts by phone number or display name
 * [Hilt](https://developer.android.com/training/dependency-injection/hilt-android) is a dependency injection library for
   Android
 * [Kotlin-Flow](https://developer.android.com/kotlin/flow) flow is a type that can emit multiple values sequentially, as opposed to suspend functions that return only a single value
-
-#### Sonar analyse result
-
-![alt text](https://github.com/forzakmah/contactSyncApp/blob/main/previews/sonar_contact_app.png "Preview")
